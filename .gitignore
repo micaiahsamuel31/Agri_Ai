@@ -26,11 +26,24 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# AI model artifacts
+*.h5
+*.pth
+*.pt
+
 # macOS
 .DS_Store
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
