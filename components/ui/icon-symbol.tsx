@@ -18,6 +18,7 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chart.line.uptrend.xyaxis': 'show-chart',
   'leaf.fill': 'eco',
+  'flask.fill': 'science',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
 } as IconMapping;

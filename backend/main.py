@@ -11,6 +11,7 @@ import backend.models.market as market_models
 from backend.schemas.crop import CropCreate, CropResponse
 from backend.schemas.market import MarketPriceResponse
 from backend.services.market import fetch_and_save_prices
+from backend.services.soil import analyze_soil
 from backend.ai.predict import predict_disease
 
 
@@ -132,6 +133,13 @@ def list_supported_crops():
         "crops": sorted(FALLBACK_PRICES.keys()),
         "note": "Other crops are also supported; fallback price will be ₹2000/quintal.",
     }
+
+
+# ── Soil Analysis ─────────────────────────────────────────────────────────────
+
+@app.get("/soil")
+def get_soil_analysis(lat: float, lon: float, crop: str = "rice"):
+    return analyze_soil(lat, lon, crop)
 
 
 # ── Disease Detection ─────────────────────────────────────────────────────────
