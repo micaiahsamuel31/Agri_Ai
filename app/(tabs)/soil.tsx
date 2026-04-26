@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { FlaskConical, MapPin, RefreshCcw, Sprout } from 'lucide-react-native';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,

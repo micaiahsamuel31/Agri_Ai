@@ -1,5 +1,5 @@
 import { AlertCircle, Minus, Search, TrendingDown, TrendingUp } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,

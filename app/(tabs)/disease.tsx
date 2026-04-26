@@ -1,12 +1,12 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, FileImage, Leaf, ShieldAlert, Upload } from 'lucide-react-native';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
-  Pressable,
   Platform,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,

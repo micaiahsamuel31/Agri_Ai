@@ -69,6 +69,33 @@ function formatPlace(place: Place | null) {
   return [place.city, place.district, place.region, place.country].filter(Boolean).join(', ');
 }
 
+function getWeatherRecommendations(weather: WeatherResponse) {
+  const tips: string[] = [];
+  const current = weather.current;
+  const rainChanceToday = weather.daily.precipitation_probability_max[0] ?? 0;
+  const maxTempToday = weather.daily.temperature_2m_max[0] ?? current.temperature_2m;
+
+  if (current.precipitation > 0 || rainChanceToday >= 60) {
+    tips.push('Delay pesticide or fertilizer spraying until rain risk drops.');
+  } else {
+    tips.push('Good window for field inspection, spraying, or light farm work.');
+  }
+
+  if (maxTempToday >= 34 || current.apparent_temperature >= 34) {
+    tips.push('Irrigate early morning or evening to reduce heat stress.');
+  }
+
+  if (current.wind_speed_10m >= 25) {
+    tips.push('Avoid spraying today because wind can cause drift and wastage.');
+  }
+
+  if (current.relative_humidity_2m >= 80) {
+    tips.push('Watch for fungal disease risk in dense or wet crop canopies.');
+  }
+
+  return tips.slice(0, 3);
+}
+
 export default function HomeScreen() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [place, setPlace] = useState<Place | null>(null);
@@ -132,6 +159,8 @@ export default function HomeScreen() {
   useEffect(() => {
     loadWeather();
   }, [loadWeather]);
+
+  const recommendations = weather ? getWeatherRecommendations(weather) : [];
 
   if (loading) {
     return (
@@ -211,6 +240,18 @@ export default function HomeScreen() {
                 <Text style={styles.metricLabel}>Direction</Text>
                 <Text style={styles.metricValue}>{weather.current.wind_direction_10m}°</Text>
               </View>
+            </View>
+
+            <View style={styles.recommendationCard}>
+              <Text style={styles.sectionTitle}>Recommendations</Text>
+              {recommendations.map((tip, index) => (
+                <View key={tip} style={styles.recommendationRow}>
+                  <View style={styles.recommendationDot}>
+                    <Text style={styles.recommendationNumber}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.recommendationText}>{tip}</Text>
+                </View>
+              ))}
             </View>
 
             <View style={styles.forecastCard}>
@@ -347,6 +388,39 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#dbe8dd',
+  },
+  recommendationCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#dbe8dd',
+  },
+  recommendationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingTop: 10,
+  },
+  recommendationDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#dcfce7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  recommendationNumber: {
+    color: '#166534',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  recommendationText: {
+    color: '#334155',
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 22,
   },
   sectionTitle: {
     color: '#0f172a',
