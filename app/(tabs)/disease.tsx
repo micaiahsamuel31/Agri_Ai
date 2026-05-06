@@ -298,8 +298,6 @@ export default function DiseaseDetectionScreen() {
                 No recommendations available.
               </Text>
             )}
-
-            
           </View>
         )}
       </ScrollView>
