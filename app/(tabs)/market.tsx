@@ -1,4 +1,4 @@
-import { AlertCircle, Minus, Search, TrendingDown, TrendingUp } from 'lucide-react-native';
+import { Minus, Search, TrendingDown, TrendingUp } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -44,8 +44,6 @@ type MarketData = {
   forecast_available: boolean;
   recommendation: string;
 };
-
-type DisplayTrend = 'rising' | 'falling' | 'stable';
 
 const QUICK_CROPS = [
   { id: 'tomato', name: 'Tomato', icon: '🍅' },
@@ -104,33 +102,6 @@ export default function MarketScreen() {
   const chartValues = chartPoints.length
     ? chartPoints.map((point) => point.price)
     : [data?.current_price ?? 0];
-  const priceChange = data ? data.predicted_price - data.current_price : 0;
-  const priceChangePercent = data?.current_price
-    ? (priceChange / data.current_price) * 100
-    : 0;
-  const displayTrend: DisplayTrend = data
-    ? Math.abs(priceChangePercent) < 1
-      ? 'stable'
-      : priceChange > 0
-        ? 'rising'
-        : 'falling'
-    : 'stable';
-  const TrendIcon = displayTrend === 'rising'
-    ? TrendingUp
-    : displayTrend === 'falling'
-      ? TrendingDown
-      : Minus;
-  const trendColor = displayTrend === 'rising'
-    ? '#065f46'
-    : displayTrend === 'falling'
-      ? '#991b1b'
-      : '#1d4ed8';
-  const trendLabel = displayTrend === 'rising'
-    ? 'Rising'
-    : displayTrend === 'falling'
-      ? 'Falling'
-      : 'Stable';
-  const trendDetails = `${priceChange >= 0 ? '+' : '-'}₹${Math.abs(priceChange).toFixed(0)} (${priceChangePercent >= 0 ? '+' : ''}${priceChangePercent.toFixed(1)}%)`;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -204,16 +175,15 @@ export default function MarketScreen() {
                   <Text style={styles.priceText}>₹{data.current_price}</Text>
                   <Text style={styles.unitText}>{data.unit}</Text>
                 </View>
-                <View style={[styles.badge, styles[displayTrend]]}>
-                  <TrendIcon size={16} color={trendColor} />
-                  <View>
-                    <Text style={[styles.badgeText, { color: trendColor }]}>
-                      {trendLabel}
-                    </Text>
-                    <Text style={[styles.badgeSubText, { color: trendColor }]}>
-                      {trendDetails}
-                    </Text>
-                  </View>
+                <View style={[styles.badge, data.trend === 'rising' ? styles.rising : data.trend === 'falling' ? styles.falling : styles.stable]}>
+                  {data.trend === 'rising' ? (
+                    <TrendingUp size={16} color="#065f46" />
+                  ) : data.trend === 'falling' ? (
+                    <TrendingDown size={16} color="#991b1b" />
+                  ) : (
+                    <Minus size={16} color="#1d4ed8" />
+                  )}
+                  <Text style={styles.badgeText}>{data.trend.toUpperCase()}</Text>
                 </View>
               </View>
 
@@ -245,7 +215,7 @@ export default function MarketScreen() {
                 }}
                 width={screenWidth - 70}
                 height={180}
-                chartConfig={getChartConfig(displayTrend)}
+                chartConfig={chartConfig}
                 bezier
                 style={styles.chartStyle}
                 withInnerLines={false}
@@ -257,16 +227,11 @@ export default function MarketScreen() {
             <View style={styles.predictCard}>
               <View>
                 <Text style={styles.predictLabel}>
-                  {data.forecast_available ? 'Estimated Price (7 Days)' : 'Forecast'}
+                  {data.forecast_available ? 'Estimated Price (7 Days)' : 'Official Forecast'}
                 </Text>
                 <Text style={styles.predictPrice}>
                   {data.forecast_available ? `₹${data.predicted_price}` : 'Unavailable'}
                 </Text>
-                {data.forecast_available && (
-                  <Text style={styles.predictTrend}>
-                    {trendLabel} by {trendDetails}
-                  </Text>
-                )}
               </View>
               <View style={styles.confidenceBadge}>
                 <Text style={styles.confidenceText}>
@@ -275,14 +240,9 @@ export default function MarketScreen() {
               </View>
             </View>
 
-            {/* Recommendation */}
-            <View style={styles.recommendationCard}>
-              <View style={styles.flexRow}>
-                <AlertCircle size={20} color="#f59e0b" />
-                <Text style={styles.recommendationTitle}> Trade Recommendation</Text>
-              </View>
-              <Text style={styles.recommendationText}>{data.recommendation}</Text>
-            </View>
+            
+             
+            
           </>
         ) : (
           <View style={styles.emptyContainer}>
@@ -294,27 +254,14 @@ export default function MarketScreen() {
   );
 }
 
-const getChartConfig = (trend: DisplayTrend) => {
-  const lineColor = trend === 'rising'
-    ? '16, 185, 129'
-    : trend === 'falling'
-      ? '220, 38, 38'
-      : '37, 99, 235';
-  const stroke = trend === 'rising'
-    ? '#10b981'
-    : trend === 'falling'
-      ? '#dc2626'
-      : '#2563eb';
-
-  return {
-    backgroundColor: '#ffffff',
-    backgroundGradientFrom: '#ffffff',
-    backgroundGradientTo: '#ffffff',
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(${lineColor}, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(148, 163, 184, ${opacity})`,
-    propsForDots: { r: '5', strokeWidth: '2', stroke },
-  };
+const chartConfig = {
+  backgroundColor: '#ffffff',
+  backgroundGradientFrom: '#ffffff',
+  backgroundGradientTo: '#ffffff',
+  decimalPlaces: 0,
+  color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(148, 163, 184, ${opacity})`,
+  propsForDots: { r: '5', strokeWidth: '2', stroke: '#10b981' },
 };
 
 const styles = StyleSheet.create({
@@ -343,17 +290,16 @@ const styles = StyleSheet.create({
   emptyText: { color: '#64748b', fontSize: 15 },
 
   card: { backgroundColor: '#fff', padding: 15, borderRadius: 24, elevation: 4, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
   priceInfo: { flex: 1, paddingRight: 12 },
   priceText: { fontSize: 32, fontWeight: 'bold', color: '#1e293b' },
   unitText: { color: '#64748b', fontSize: 12, marginTop: 2 },
   label: { fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 },
-  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, gap: 6 },
+  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, gap: 4 },
   rising: { backgroundColor: '#d1fae5' },
   falling: { backgroundColor: '#fee2e2' },
   stable: { backgroundColor: '#dbeafe' },
-  badgeText: { fontWeight: 'bold', fontSize: 11, textTransform: 'uppercase' },
-  badgeSubText: { fontSize: 10, fontWeight: '700', marginTop: 1 },
+  badgeText: { fontWeight: 'bold', fontSize: 11 },
   metaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
   metaItem: { width: '47%', backgroundColor: '#f8fafc', borderRadius: 12, padding: 10 },
   metaLabel: { color: '#94a3b8', fontSize: 10, textTransform: 'uppercase', marginBottom: 4 },
@@ -363,7 +309,6 @@ const styles = StyleSheet.create({
   predictCard: { backgroundColor: '#064e3b', padding: 20, borderRadius: 24, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   predictLabel: { color: '#a7f3d0', fontSize: 11, textTransform: 'uppercase' },
   predictPrice: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
-  predictTrend: { color: '#d1fae5', fontSize: 12, fontWeight: '700', marginTop: 4 },
   confidenceBadge: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   confidenceText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
 
