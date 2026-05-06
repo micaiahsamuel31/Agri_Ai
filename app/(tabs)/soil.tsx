@@ -2,19 +2,17 @@ import * as Location from 'expo-location';
 import { FlaskConical, MapPin, RefreshCcw, Sprout } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
-const API_HOST = Platform.OS === 'web' ? '127.0.0.1' : '10.1.7.137';
-const API_URL = `http://${API_HOST}:8000`;
+import { API_URL } from '@/constants/api';
 
 type SoilData = {
   location: { lat: number; lon: number };
@@ -92,9 +90,6 @@ export default function SoilScreen() {
 
         <View style={styles.heroCard}>
           <Text style={styles.heroTitle}>Soil Intelligence</Text>
-          <Text style={styles.heroCopy}>
-            Select a crop and analyse soil conditions for your current location.
-          </Text>
         </View>
 
         <View style={styles.card}>

@@ -1,24 +1,22 @@
-import { AlertCircle, Minus, Search, TrendingDown, TrendingUp } from 'lucide-react-native';
+import { Minus, Search, TrendingDown, TrendingUp } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const screenWidth = Dimensions.get('window').width;
+import { API_PORT, API_URL } from '@/constants/api';
 
-const API_HOST = Platform.OS === 'web' ? '127.0.0.1' : '10.1.7.137';
-const BACKEND_URL = `http://${API_HOST}:8000`;
+const screenWidth = Dimensions.get('window').width;
 
 type MarketPoint = {
   date: string;
@@ -69,7 +67,7 @@ export default function MarketScreen() {
         crop: cropName,
         region,
       });
-      const response = await fetch(`${BACKEND_URL}/market-price?${params.toString()}`);
+      const response = await fetch(`${API_URL}/market-price?${params.toString()}`);
       
       if (!response.ok) throw new Error('Server Error');
       
@@ -80,7 +78,7 @@ export default function MarketScreen() {
       setData(null);
       Alert.alert(
         'Connection Error',
-        'Could not connect to the backend. Start FastAPI on port 8000 and update BACKEND_URL if you are testing on a phone.'
+        `Could not connect to the backend. Start FastAPI on port ${API_PORT} and update constants/api.ts if you are testing on a phone.`
       );
     } finally {
       setLoading(false);
@@ -242,14 +240,7 @@ export default function MarketScreen() {
               </View>
             </View>
 
-            {/* Recommendation */}
-            <View style={styles.recommendationCard}>
-              <View style={styles.flexRow}>
-                <AlertCircle size={20} color="#f59e0b" />
-                <Text style={styles.recommendationTitle}> Trade Recommendation</Text>
-              </View>
-              <Text style={styles.recommendationText}>{data.recommendation}</Text>
-            </View>
+            
           </>
         ) : (
           <View style={styles.emptyContainer}>

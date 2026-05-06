@@ -54,7 +54,7 @@ def load_model():
 
 
 def get_severity(confidence: float, disease_name: str) -> str:
-    if disease_name.lower() == "healthy":
+    if "healthy" in disease_name.lower():
         return "low"
 
     if confidence < 0.60:

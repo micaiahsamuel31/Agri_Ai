@@ -1,22 +1,21 @@
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, FileImage, Leaf, ShieldAlert, Upload } from 'lucide-react-native';
+import { Camera, FileImage, Leaf, Upload } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
-const API_HOST = Platform.OS === 'web' ? '127.0.0.1' : '10.1.7.137';
-const API_URL = `http://${API_HOST}:8000`;
+import { API_PORT, API_URL } from '@/constants/api';
 
 type DiseasePrediction = {
   crop_name: string;
@@ -41,6 +40,7 @@ export default function DiseaseDetectionScreen() {
   const [imageFilename, setImageFilename] = useState('photo.jpg');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DiseasePrediction | null>(null);
+  const [message, setMessage] = useState('');
 
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -62,6 +62,7 @@ export default function DiseaseDetectionScreen() {
       setImageMime(asset.mimeType ?? 'image/jpeg');
       setImageFilename(asset.fileName ?? 'photo.jpg');
       setResult(null);
+      setMessage('');
     }
   }
 
@@ -84,36 +85,36 @@ export default function DiseaseDetectionScreen() {
       setImageMime(asset.mimeType ?? 'image/jpeg');
       setImageFilename(asset.fileName ?? 'photo.jpg');
       setResult(null);
+      setMessage('');
     }
   }
 
   async function analyzeImage() {
     if (!imageUri) {
-      Alert.alert('No image', 'Please select or capture a crop image first.');
-      return;
-    }
-
-    if (!cropName.trim()) {
-      Alert.alert('Crop name required', 'Please enter the crop name.');
+      const errorMessage = 'Please select or capture a crop image first.';
+      setMessage(errorMessage);
+      Alert.alert('No image', errorMessage);
       return;
     }
 
     setLoading(true);
+    setResult(null);
+    setMessage('');
 
     try {
       const formData = new FormData();
 
-      formData.append('crop_name', cropName.trim());
+      formData.append('crop_name', cropName.trim() || 'Unspecified crop');
 
       if (Platform.OS === 'web') {
         const imageResponse = await fetch(imageUri);
         const imageBlob = await imageResponse.blob();
-        formData.append('image', imageBlob, imageFilename);
+        formData.append('image', imageBlob, imageFilename || 'leaf.jpg');
       } else {
         formData.append('image', {
           uri: imageUri,
           type: imageMime,
-          name: imageFilename,
+          name: imageFilename || 'leaf.jpg',
         } as any);
       }
 
@@ -123,15 +124,21 @@ export default function DiseaseDetectionScreen() {
       });
 
       if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(errorText || `Server error: ${response.status}`);
       }
 
       const data: DiseasePrediction = await response.json();
       setResult(data);
+      setMessage('Analysis complete.');
     } catch (error: any) {
+      const errorMessage =
+        error?.message ??
+        `Failed to analyse image. Start FastAPI on port ${API_PORT} and check the backend connection.`;
+      setMessage(errorMessage);
       Alert.alert(
         'Error',
-        error?.message ?? 'Failed to analyse image. Check backend connection.'
+        errorMessage
       );
     } finally {
       setLoading(false);
@@ -171,10 +178,7 @@ export default function DiseaseDetectionScreen() {
 
         <View style={styles.heroCard}>
           <Text style={styles.heroTitle}>Leaf Health Check</Text>
-          <Text style={styles.heroCopy}>
-            Add a clear leaf photo and crop name to get a possible diagnosis,
-            severity, confidence, and care steps.
-          </Text>
+        
         </View>
 
         <View style={styles.card}>
@@ -185,7 +189,10 @@ export default function DiseaseDetectionScreen() {
             placeholder="e.g. Tomato, Wheat, Rice"
             placeholderTextColor="#94a3b8"
             value={cropName}
-            onChangeText={setCropName}
+            onChangeText={(text) => {
+              setCropName(text);
+              setMessage('');
+            }}
             returnKeyType="done"
           />
         </View>
@@ -225,6 +232,12 @@ export default function DiseaseDetectionScreen() {
             <Text style={styles.analyseBtnText}>Analyse Image</Text>
           </Pressable>
         )}
+
+        {message ? (
+          <Text style={[styles.statusText, result ? styles.statusSuccess : styles.statusError]}>
+            {message}
+          </Text>
+        ) : null}
 
         {result && (
           <View style={styles.resultCard}>
@@ -266,14 +279,7 @@ export default function DiseaseDetectionScreen() {
               </View>
             </View>
 
-            <View style={styles.infoBox}>
-              <ShieldAlert size={18} color="#b45309" />
-              <Text style={styles.infoText}>
-                This result is AI-based. Confirm with an agriculture expert before
-                using strong chemicals or fungicides.
-              </Text>
-            </View>
-
+            
             <View style={styles.divider} />
 
             <Text style={styles.sectionTitle}>Recommended Actions</Text>
@@ -293,9 +299,7 @@ export default function DiseaseDetectionScreen() {
               </Text>
             )}
 
-            {result.notes ? (
-              <Text style={styles.notes}>{result.notes}</Text>
-            ) : null}
+            
           </View>
         )}
       </ScrollView>
@@ -454,6 +458,22 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#64748b',
     marginTop: 10,
+  },
+  statusText: {
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  statusError: {
+    backgroundColor: '#fef2f2',
+    color: '#991b1b',
+  },
+  statusSuccess: {
+    backgroundColor: '#ecfdf5',
+    color: '#047857',
   },
   diagnosisHeader: {
     flexDirection: 'row',

@@ -1,8 +1,10 @@
+from io import BytesIO
+
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 import backend.database as database
 import backend.models.crop as crop_models
@@ -144,19 +146,40 @@ def get_soil_analysis(lat: float, lon: float, crop: str = "rice"):
 
 # ── Disease Detection ─────────────────────────────────────────────────────────
 
+async def read_upload_image(file: UploadFile) -> Image.Image:
+    if file.content_type and not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=415, detail="Upload must be an image file.")
+
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty.")
+
+    try:
+        return Image.open(BytesIO(contents)).convert("RGB")
+    except UnidentifiedImageError as exc:
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid image.") from exc
+
+
 @app.post("/detect-disease")
 async def detect_disease(file: UploadFile = File(...)):
-    image = Image.open(file.file).convert("RGB")
+    image = await read_upload_image(file)
     result = predict_disease(image)
     return result
 
 @app.post("/api/disease/predict")
 async def predict_disease_api(
-    crop_name: str = Form(...),
+    crop_name: str = Form("Unspecified crop"),
     image: UploadFile = File(...),
 ):
-    pil_image = Image.open(image.file).convert("RGB")
+    crop = crop_name.strip() or "Unspecified crop"
+    pil_image = await read_upload_image(image)
     result = predict_disease(pil_image)
-    result["crop_name"] = crop_name
+    result["crop_name"] = crop
     result["filename"] = image.filename
     return result
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
